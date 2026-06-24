@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Receive Money - PalmPay Demo</title>
+<style>
+  :root {
+    --bg: #0f0f12;
+    --panel: #17171c;
+    --muted: #9aa2b2;
+    --purple: #7c3aed;
+    --purple-2: #5b21b6;
+    --card: #17171c;
+    --accent: #ffd166;
+  }
+  html, body { height: 100dvh; margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: var(--bg); color: #fff; -webkit-font-smoothing: antialiased; }
+  .app { max-width: 420px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; padding-bottom: 80px; }
+  header { padding: 14px 12px 10px; display: flex; align-items: center; gap: 10px; }
+  .back-btn { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .title { font-weight: 700; font-size: 18px; }
+  .card { margin: 12px; padding: 14px; border-radius: 14px; background: var(--panel); border: 1px solid rgba(255,255,255,0.08); }
+  .field { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #fff; margin-top: 10px; }
+  .primary { width: 100%; padding: 12px; border-radius: 10px; border: none; background: linear-gradient(90deg, var(--purple), var(--purple-2)); color: #fff; font-weight: 700; cursor: pointer; }
+  .small-btn { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18); background: transparent; color: #fff; cursor: pointer; }
+  .status { margin-top: 10px; font-size: 13px; min-height: 18px; }
+  .pending-payments { margin-top: 14px; font-size: 12px; color: var(--muted); }
+  .option-list { display: flex; flex-direction: column; gap: 10px; }
+  .option { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); cursor: pointer; }
+  .option:hover { background: rgba(255,255,255,0.12); }
+  .option .icon { width: 34px; height: 34px; border-radius: 12px; background: rgba(123, 97, 255,0.18); display: flex; align-items: center; justify-content: center; }
+  .option .label { display: flex; flex-direction: column; }
+  .option .label .title { font-weight: 700; }
+  .option .label .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .receipt-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20; }
+  .receipt-screen.active { display: flex; }
+  .receipt-container { width: 100%; max-width: 420px; background: var(--panel); border-radius: 16px; padding: 18px; border: 1px solid rgba(255,255,255,0.12); }
+  .receipt-top-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .receipt-title { font-weight: 700; flex: 1; }
+  .receipt-close-btn { width: 36px; height: 36px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  /* Top-up Modal Styles */
+  .topup-screen { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; z-index: 30; }
+  .topup-screen.active { display: flex; }
+  .topup-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); background: var(--bg); }
+  .topup-header-left { display: flex; align-items: center; gap: 10px; }
+  .topup-back-btn { width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .topup-header-title { font-weight: 700; font-size: 16px; }
+  .topup-history-btn { padding: 6px 12px; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 12px; cursor: pointer; }
+  .topup-content { flex: 1; overflow-y: auto; padding: 16px 12px; }
+  .topup-warning { background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.3); border-radius: 10px; padding: 12px; display: flex; gap: 10px; margin-bottom: 16px; }
+  .topup-warning-icon { font-size: 20px; flex-shrink: 0; }
+  .topup-warning-text { font-size: 12px; color: #fff; }
+  .topup-section-title { font-weight: 700; font-size: 14px; margin-bottom: 12px; margin-top: 16px; }
+  .topup-fund-method { background: var(--panel); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+  .topup-fund-left { display: flex; align-items: center; gap: 12px; }
+  .topup-fund-icon { width: 40px; height: 40px; border-radius: 8px; background: rgba(0,150,180,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .topup-fund-name { font-weight: 700; font-size: 13px; }
+  .topup-fund-account { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .topup-fund-change { padding: 6px 12px; background: transparent; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; color: #fff; font-size: 12px; cursor: pointer; }
+  .topup-amount-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05); color: #fff; font-size: 14px; margin-bottom: 12px; }
+  .topup-amount-input::placeholder { color: rgba(255,255,255,0.4); }
+  .topup-quick-amounts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .topup-amount-btn { padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #fff; font-weight: 700; cursor: pointer; transition: background 0.3s ease; }
+  .topup-amount-btn:hover { background: rgba(124, 58, 237, 0.2); border-color: var(--purple); }
+  .topup-fund-btn { width: 100%; padding: 12px; border-radius: 10px; background: linear-gradient(90deg, var(--purple), var(--purple-2)); border: none; color: #fff; font-weight: 700; cursor: pointer; font-size: 14px; margin-bottom: 12px; }
+  .topup-info-text { text-align: center; font-size: 12px; color: var(--muted); }
+  .topup-info-text a { color: var(--purple); text-decoration: none; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <button class="back-btn" id="backBtn" title="Back">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="title">Receive Money</div>
+  </header>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div>
+        <div style="font-weight:700;font-size:16px;">Bank Transfer</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">FREE instant bank funding within 10s</div>
+      </div>
+      <div style="width:40px;height:40px;border-radius:12px;background:rgba(123,97,255,0.2);display:flex;align-items:center;justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M8 8h8M8 16h8"/></svg>
+      </div>
+    </div>
+
+    <div style="padding:16px;border-radius:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:12px;color:var(--muted);">PalmPay Account Number <span style="font-weight:700;margin-left:8px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,0.12);font-size:10px;">Tier 3</span></div>
+      </div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:2px;margin-top:10px;">904 276 9211</div>
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button class="small-btn" id="copyNumberBtn" style="flex:1;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);">Copy Number</button>
+        <button class="primary" id="shareDetailBtn" style="flex:1;padding:10px;">Share Detail</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:12px;color:var(--muted);margin:18px 0;position:relative;">
+      <span style="background:var(--bg);padding:0 10px;position:relative;z-index:1;">OR</span>
+      <div style="height:1px;background:rgba(255,255,255,0.12);position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);"></div>
+    </div>
+
+    <div class="option-list">
+      <div class="option" id="optCashDeposit">
+        <div class="label">
+          <div class="title">Cash Deposit <span style="background:#ff7a00;color:#111;font-size:10px;padding:2px 6px;border-radius:999px;margin-left:6px;">New</span></div>
+          <div class="subtitle">Fund your account with nearby agents</div>
+        </div>
+        <div class="icon">💵</div>
+      </div>
+      <div class="option" id="optTopUp">
+        <div class="label">
+          <div class="title">Top-up with Card/Account</div>
+          <div class="subtitle">Add money from your bank card/account</div>
+        </div>
+        <div class="icon">💳</div>
+      </div>
+      <div class="option" id="optReceiveMoney">
+        <div class="label">
+          <div class="title">Receive Money</div>
+          <div class="subtitle">Share your account and ask for transfer</div>
+        </div>
+        <div class="icon">↗️</div>
+      </div>
+      <div class="option" id="optUSSD">
+        <div class="label">
+          <div class="title">USSD</div>
+          <div class="subtitle">Use your other bank's USSD code</div>
+        </div>
+        <div class="icon">#️⃣</div>
+      </div>
+    </div>
+
+    <div id="receiveFormContainer" style="margin-top:16px;display:none;">
+      <div style="font-weight:700;margin-bottom:6px;">Request payment</div>
+      <input class="field" type="text" id="senderNameInput" placeholder="Sender Name" required>
+      <input class="field" type="email" id="senderEmailInput" placeholder="Sender Email" required>
+      <input class="field" type="text" id="senderBankInput" placeholder="Sender Bank" required>
+      <input class="field" type="text" id="senderAccountInput" placeholder="Sender Account Number" required>
+      <input class="field" type="number" id="amountInput" placeholder="₦ Amount" required>
+
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button class="primary" id="receiveBtn" style="flex:1">Request</button>
+        <button class="small-btn" id="cancelAddMoney" style="flex:1">Close</button>
+      </div>
+
+      <div id="addMoneyStatus" class="status"></div>
+      <div id="pendingPayments" class="pending-payments"></div>
+    </div>
+  </div>
+
+  <div class="receipt-screen" id="successScreen">
+    <div class="receipt-container" id="receiptDetails"></div>
+  </div>
+
+  <!-- Top-up with Card/Account Screen -->
+  <div class="topup-screen" id="topupScreen">
+    <div class="topup-header">
+      <div class="topup-header-left">
+        <button class="topup-back-btn" id="topupBackBtn">←</button>
+        <div class="topup-header-title">Top-up with Card/Account</div>
+      </div>
+      <button class="topup-history-btn">History</button>
+    </div>
+
+    <div class="topup-content">
+      <!-- Warning Message -->
+      <div class="topup-warning">
+        <div class="topup-warning-icon">⚡</div>
+        <div class="topup-warning-text">Unable to fund your PalmPay wallet via UBA account due to ongoing system maintenance.</div>
+      </div>
+
+      <!-- Fund Method Section -->
+      <div class="topup-section-title">Fund Method</div>
+      <div class="topup-fund-method">
+        <div class="topup-fund-left">
+          <div class="topup-fund-icon">💳</div>
+          <div class="topup-fund-info">
+            <div class="topup-fund-name">OPay</div>
+            <div class="topup-fund-account">**** 6072</div>
+          </div>
+        </div>
+        <button class="topup-fund-change" id="changeMethodBtn">Change</button>
+      </div>
+
+      <!-- Amount Selection Section -->
+      <div class="topup-section-title">Enter or select amount</div>
+      
+      <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+        <input type="number" class="topup-amount-input" id="customAmountInput" placeholder="₦  Enter 100-9,999" min="100" max="9999">
+        <button class="topup-fund-btn" id="fundBtn" style="flex: 0.3; margin: 0;">Fund!</button>
+      </div>
+
+      <!-- Quick Amount Buttons -->
+      <div class="topup-quick-amounts">
+        <button class="topup-amount-btn" data-amount="200">₦200</button>
+        <button class="topup-amount-btn" data-amount="1000">₦1,000</button>
+        <button class="topup-amount-btn" data-amount="2000">₦2,000</button>
+        <button class="topup-amount-btn" data-amount="3000">₦3,000</button>
+        <button class="topup-amount-btn" data-amount="5000">₦5,000</button>
+        <button class="topup-amount-btn" data-amount="9999">₦9,999</button>
+      </div>
+
+      <!-- Info Text -->
+      <div class="topup-info-text">
+        For amount above ₦9,999, <a id="useTransferLink">use bank transfer now ></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS_BAL = 'demo_balance_ngn';
+const LS_TX = 'demo_transactions_ngn';
+const LS_THEME = 'demo_theme';
+
+let balance = parseFloat(localStorage.getItem(LS_BAL) || '556489.00');
+let transactions = JSON.parse(localStorage.getItem(LS_TX) || '[]');
+
+const isLocalDevHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE_URL = (window.location.protocol === 'file:' || (isLocalDevHost && window.location.port !== '3001'))
+  ? 'http://localhost:3001'
+  : '';
+
+async function parseApiJson(response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await response.text();
+    throw new Error(`API returned non-JSON response (status ${response.status}).`);
+  }
+  return response.json();
+}
+
+const senderNameInput = document.getElementById('senderNameInput');
+const senderBankInput = document.getElementById('senderBankInput');
+const senderAccountInput = document.getElementById('senderAccountInput');
+const senderEmailInput = document.getElementById('senderEmailInput');
+const amountInput = document.getElementById('amountInput');
+const receiveBtn = document.getElementById('receiveBtn');
+const cancelAddMoney = document.getElementById('cancelAddMoney');
+const addMoneyStatus = document.getElementById('addMoneyStatus');
+const receiptDetails = document.getElementById('receiptDetails');
+const successScreen = document.getElementById('successScreen');
+  const copyNumberBtn = document.getElementById('copyNumberBtn');
+  const shareDetailBtn = document.getElementById('shareDetailBtn');
+  const optReceiveMoney = document.getElementById('optReceiveMoney');
+  const receiveFormContainer = document.getElementById('receiveFormContainer');
+
+function saveState() {
+  localStorage.setItem(LS_BAL, balance);
+  localStorage.setItem(LS_TX, JSON.stringify(transactions));
+}
+
+function renderPendingPayments() {
+  const containers = Array.from(document.querySelectorAll('.pending-payments'));
+  if (containers.length === 0) return;
+
+  const pending = JSON.parse(localStorage.getItem('pendingPayments') || '{}');
+  const refs = Object.keys(pending);
+  if (refs.length === 0) {
+    containers.forEach(c => c.innerHTML = '');
+    return;
+  }
+
+  const items = refs.map(ref => {
+    const p = pending[ref];
+    const amount = formatNGN(p.amount);
+    const sender = p.senderName || 'Unknown Sender';
+    const bank = p.senderBank || '';
+    const acct = p.senderAccount || '';
+    const bankInfo = [bank, acct].filter(Boolean).join(' | ');
+
+    return `
+      <div style="padding:10px;border:1px solid rgba(255,255,255,0.12);border-radius:10px;margin-bottom:8px;">
+        <div style="font-weight:600;margin-bottom:4px;">Pending payment: ${amount}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">From: ${sender}${bankInfo ? ` (${bankInfo})` : ''}</div>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="small-btn" data-action="finalize" data-ref="${ref}" style="flex:1">Finalize</button>
+          <button type="button" class="small-btn ghost" data-action="cancel" data-ref="${ref}" style="flex:1">Cancel</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const html = `
+    <div style="font-weight:600;margin-bottom:6px;">Pending payments</div>
+    ${items}
+  `;
+
+  containers.forEach(container => {
+    container.innerHTML = html;
+    container.querySelectorAll('button[data-action]').forEach(btn => {
+      const action = btn.getAttribute('data-action');
+      const ref = btn.getAttribute('data-ref');
+      if (action === 'finalize') {
+        btn.addEventListener('click', () => finalizePendingPayment(ref));
+      } else if (action === 'cancel') {
+        btn.addEventListener('click', () => {
+          const pending = JSON.parse(localStorage.getItem('pendingPayments') || '{}');
+          delete pending[ref];
+          localStorage.setItem('pendingPayments', JSON.stringify(pending));
+          renderPendingPayments();
+        });
+      }
+    });
+  });
+}
+
+async function finalizePendingPayment(reference) {
+  if (!reference) return;
+  const pending = JSON.parse(localStorage.getItem('pendingPayments') || '{}');
+  const payment = pending[reference];
+  if (!payment) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/monnify/verify-transaction?reference=${encodeURIComponent(reference)}`);
+    const result = await parseApiJson(response);
+
+    if (!result.status || result.data?.status !== 'success') {
+      showStatus('Payment not completed yet. Please finalize the payment in the Monnify window.', false);
+      return;
+    }
+
+    const amount = payment.amount;
+    balance = +(balance + amount).toFixed(2);
+
+    const now = Date.now();
+    const tx = {
+      id: genId(),
+      name: 'Add Money (Monnify)',
+      amount: +amount,
+      time: now,
+      senderName: payment.senderName,
+      senderBank: payment.senderBank,
+      senderAccount: payment.senderAccount,
+      reference
+    };
+
+    transactions.unshift(tx);
+    saveState();
+
+    showReceipt(amount, payment, reference, now, tx.id);
+
+    delete pending[reference];
+    localStorage.setItem('pendingPayments', JSON.stringify(pending));
+    renderPendingPayments();
+  } catch (error) {
+    console.error('Finalize payment error:', error);
+    showStatus('Could not verify payment yet. Please try again later.', false);
+  }
+}
+
+function showReceipt(amount, payment, reference, now, txId) {
+  const sessId = genSessId();
+  receiptDetails.innerHTML = `
+    <div class="receipt-top-bar">
+      <div class="receipt-title">Receipt</div>
+      <button class="receipt-close-btn" id="closeReceipt">✕</button>
+    </div>
+    <div style="padding:10px;">
+      <div style="font-weight:700; font-size:18px; margin-bottom:8px;">${formatNGN(amount)}</div>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:14px;">Successful Transaction</div>
+      <div style="font-size:12px; margin-bottom:10px;">Date: ${getFormattedDate(now)}</div>
+      <div style="border-top:1px solid rgba(255,255,255,0.12); margin:10px 0;"></div>
+      <div style="font-weight:600; margin-bottom:4px;">Sender</div>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:10px;">${payment.senderName} (${payment.senderBank} | ${payment.senderAccount})</div>
+      <div style="font-weight:600; margin-bottom:4px;">Reference</div>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:10px;">${reference}</div>
+      <div style="font-weight:600; margin-bottom:4px;">Transaction ID</div>
+      <div style="font-size:13px; color:var(--muted);">${txId}</div>
+    </div>
+  `;
+
+  document.getElementById('closeReceipt').addEventListener('click', () => {
+    successScreen.classList.remove('active');
+  });
+
+  successScreen.classList.add('active');
+}
+
+optReceiveMoney.addEventListener('click', () => {
+  receiveFormContainer.style.display = receiveFormContainer.style.display === 'none' ? 'block' : 'none';
+});
+
+copyNumberBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText('9042769211');
+    showStatus('Account number copied to clipboard', true);
+  } catch {
+    showStatus('Copy failed. Please do it manually.', false);
+  }
+});
+
+shareDetailBtn.addEventListener('click', async () => {
+  const text = 'Send money to my PalmPay account: 904 276 9211';
+  if (navigator.share) {
+    navigator.share({ title: 'PalmPay account', text });
+  } else {
+    try {
+      await navigator.clipboard.writeText(text);
+      showStatus('Details copied to clipboard', true);
+    } catch {
+      showStatus('Share not supported, please copy manually.', false);
+    }
+  }
+});
+
+receiveBtn.addEventListener('click', async () => {
+  const senderName = senderNameInput.value.trim();
+  const senderEmail = senderEmailInput.value.trim();
+  const senderBank = senderBankInput.value.trim();
+  const senderAccount = senderAccountInput.value.trim();
+  const amount = parseFloat(amountInput.value || '0');
+
+  if (!senderName || !senderEmail || !senderBank || !senderAccount || !amount || amount <= 0) {
+    showStatus('Please fill all fields with valid details', false);
+    return;
+  }
+
+  receiveBtn.classList.add('loading');
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/monnify/initialize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount, email: senderEmail, name: senderName })
+    });
+
+    const result = await parseApiJson(response);
+    if (!result.status || !result.data || !result.data.authorization_url) {
+      throw new Error(result.message || 'Failed to initialize payment');
+    }
+
+    const pending = JSON.parse(localStorage.getItem('pendingPayments') || '{}');
+    pending[result.data.reference] = { amount, senderName, senderBank, senderAccount };
+    localStorage.setItem('pendingPayments', JSON.stringify(pending));
+
+    renderPendingPayments();
+
+    window.open(result.data.authorization_url, '_blank');
+    showStatus('Payment initialized. Complete it in the new tab.', true);
+  } catch (error) {
+    console.error('Initialize payment error:', error);
+    showStatus(error.message || 'Failed to initialize payment', false);
+  } finally {
+    receiveBtn.classList.remove('loading');
+  }
+});
+
+cancelAddMoney.addEventListener('click', () => {
+  receiveFormContainer.style.display = 'none';
+  senderNameInput.value = '';
+  senderBankInput.value = '';
+  senderAccountInput.value = '';
+  senderEmailInput.value = '';
+  amountInput.value = '';
+  addMoneyStatus.textContent = '';
+});
+
+function getQueryParam(name) { const params = new URLSearchParams(window.location.search); return params.get(name); }
+
+const initialReference = getQueryParam('reference');
+if (initialReference) {
+  finalizePendingPayment(initialReference);
+}
+
+renderPendingPayments();
+
+// Back button
+const backBtn = document.getElementById('backBtn');
+backBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
+
+// Open receive money form when landing if needed
+receiveFormContainer.style.display = 'none';
+
+// ===== Top-up Modal Logic =====
+const topupScreen = document.getElementById('topupScreen');
+const topupBackBtn = document.getElementById('topupBackBtn');
+const customAmountInput = document.getElementById('customAmountInput');
+const fundBtn = document.getElementById('fundBtn');
+const changeMethodBtn = document.getElementById('changeMethodBtn');
+const useTransferLink = document.getElementById('useTransferLink');
+const topupAmountBtns = document.querySelectorAll('.topup-amount-btn');
+const optTopUp = document.getElementById('optTopUp');
+
+// Show top-up modal
+function showTopupModal() {
+  topupScreen.classList.add('active');
+  customAmountInput.value = '';
+  customAmountInput.focus();
+}
+
+// Hide top-up modal
+function hideTopupModal() {
+  topupScreen.classList.remove('active');
+}
+
+// Format NGN currency
+function formatNGN(value) {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '₦0.00';
+  return '₦' + num.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Generate unique ID
+function genId() {
+  return 'tx_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+}
+
+// Get formatted date
+function getFormattedDate(timestamp) {
+  return new Date(timestamp).toLocaleString('en-NG', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit'
+  });
+}
+
+// Show status message (reuse existing function or create dedicated one)
+function showStatus(msg, isSuccess = true) {
+  const status = document.getElementById('addMoneyStatus');
+  if (status) {
+    status.textContent = msg;
+    status.style.color = isSuccess ? '#10b981' : '#ef4444';
+  }
+}
+
+// Quick amount button listeners
+topupAmountBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const amount = btn.getAttribute('data-amount');
+    customAmountInput.value = amount;
+  });
+});
+
+// Fund button handler
+fundBtn.addEventListener('click', () => {
+  const amountStr = customAmountInput.value.trim();
+  const amount = parseFloat(amountStr);
+
+  if (!amountStr || isNaN(amount)) {
+    showStatus('Please enter a valid amount', false);
+    return;
+  }
+
+  if (amount < 100 || amount > 9999) {
+    showStatus('Amount must be between ₦100 and ₦9,999', false);
+    return;
+  }
+
+  fundBtn.disabled = true;
+  fundBtn.style.opacity = '0.6';
+
+  setTimeout(() => {
+    // Add money to balance
+    balance = +(balance + amount).toFixed(2);
+    
+    // Create transaction record
+    const now = Date.now();
+    const tx = {
+      id: genId(),
+      name: 'Card top up',
+      amount: +amount,
+      time: now
+    };
+    
+    transactions.unshift(tx);
+    saveState();
+
+    // Show success message
+    showStatus(`Successfully added ${formatNGN(amount)} to your wallet!`, true);
+    
+    // Reset and close modal
+    customAmountInput.value = '';
+    setTimeout(() => {
+      hideTopupModal();
+      // Show receipt
+      showTopupReceipt(amount, now, tx.id);
+    }, 1000);
+
+    fundBtn.disabled = false;
+    fundBtn.style.opacity = '1';
+  }, 1500);
+});
+
+// Show receipt for top-up
+function showTopupReceipt(amount, timestamp, txId) {
+  receiptDetails.innerHTML = `
+    <div class="receipt-top-bar">
+      <div class="receipt-title">Top-up Receipt</div>
+      <button class="receipt-close-btn" id="closeReceipt">✕</button>
+    </div>
+    <div style="padding:10px;">
+      <div style="font-weight:700; font-size:18px; margin-bottom:8px;">${formatNGN(amount)}</div>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:14px;">Top-up Successful</div>
+      <div style="font-size:12px; margin-bottom:10px;">Date: ${getFormattedDate(timestamp)}</div>
+      <div style="border-top:1px solid rgba(255,255,255,0.12); margin:10px 0;"></div>
+      <div style="font-weight:600; margin-bottom:4px;">Method</div>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:10px;">OPay Card **** 6072</div>
+      <div style="font-weight:600; margin-bottom:4px;">Transaction ID</div>
+      <div style="font-size:13px; color:var(--muted);">${txId}</div>
+    </div>
+  `;
+
+  document.getElementById('closeReceipt').addEventListener('click', () => {
+    successScreen.classList.remove('active');
+  });
+
+  successScreen.classList.add('active');
+}
+
+// Back button in top-up modal
+topupBackBtn.addEventListener('click', () => {
+  hideTopupModal();
+});
+
+// Change method button (placeholder)
+changeMethodBtn.addEventListener('click', () => {
+  showStatus('Card change feature coming soon', false);
+});
+
+// Use transfer link
+useTransferLink.addEventListener('click', () => {
+  // Could navigate to another page or show message
+  showStatus('Please use bank transfer for amounts above ₦9,999', true);
+});
+
+// Open top-up modal when clicking the option
+if (optTopUp) {
+  optTopUp.addEventListener('click', () => {
+    showTopupModal();
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Bills - PalmPay Demo</title>
+<style>
+  :root {
+    --bg: #0f0f12;
+    --panel: #17171c;
+    --muted: #9aa2b2;
+    --accent: #7c3aed;
+    --accent-2: #5b21b6;
+    --card: #17171c;
+  }
+  html, body { height: 100dvh; margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: var(--bg); color: #fff; -webkit-font-smoothing: antialiased; }
+  .app { max-width: 420px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; padding-bottom: 96px; }
+  header { display: flex; align-items: center; gap: 12px; padding: 14px 12px; }
+  .back-btn { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .title { font-weight: 700; font-size: 18px; }
+  .card { margin: 12px; padding: 14px; border-radius: 14px; background: var(--panel); border: 1px solid rgba(255,255,255,0.08); }
+  .section-title { font-weight: 700; margin-bottom: 10px; }
+  .option { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); margin-top: 10px; cursor: pointer; }
+  .option:hover { background: rgba(255,255,255,0.12); }
+  .label { display: flex; flex-direction: column; }
+  .label .title { font-weight: 700; }
+  .label .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .icon { width: 36px; height: 36px; border-radius: 12px; background: rgba(123,97,255,0.18); display: flex; align-items: center; justify-content: center; }
+  .bottom { position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel); border-top: 1px solid rgba(255,255,255,0.08); }
+  .bottom-inner { display: flex; justify-content: space-around; padding: 10px 0; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: var(--muted); cursor: pointer; }
+  .nav-item.active { color: #fff; }
+  .nav-item svg { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <button class="back-btn" id="backBtn" title="Back">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="title">Bills & Top-up</div>
+  </header>
+
+  <div class="card">
+    <div class="section-title">Choose a payment option</div>
+    <div class="option" id="optAirtime">
+      <div class="label">
+        <div class="title">Airtime</div>
+        <div class="subtitle">Buy airtime instantly</div>
+      </div>
+      <div class="icon">📞</div>
+    </div>
+    <div class="option" id="optData">
+      <div class="label">
+        <div class="title">Data</div>
+        <div class="subtitle">Buy data bundles</div>
+      </div>
+      <div class="icon">📶</div>
+    </div>
+    <div class="option" id="optBetting">
+      <div class="label">
+        <div class="title">Betting</div>
+        <div class="subtitle">Fund sportsbook wallets</div>
+      </div>
+      <div class="icon">⚽</div>
+    </div>
+  </div>
+
+  <div class="card" id="billingForm" style="display:none;">
+    <div class="section-title" id="formTitle">Pay</div>
+    <input class="field" type="text" id="recipient" placeholder="Recipient (phone or ID)" />
+    <input class="field" type="number" id="payAmount" placeholder="Amount (₦)" />
+    <button class="primary" id="payBtn">Pay</button>
+    <div class="status" id="payStatus"></div>
+  </div>
+
+  <nav class="bottom" role="navigation" aria-label="Main navigation">
+    <div class="bottom-inner">
+      <div class="nav-item" id="navHome" role="button" aria-label="Home" tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-6 9 6v8a2 2 0 01-2 2h-4v-6H9v6H5a2 2 0 01-2-2z"/></svg>Home</div>
+      <div class="nav-item" id="navLoan" role="button" aria-label="Loan" tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M12 2v20m9-9H3m7-7l-4 4 4 4m6-4l4-4-4-4"/></svg>Loan</div>
+      <div class="nav-item" id="navWealth" role="button" aria-label="Wealth" tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>Wealth</div>
+      <div class="nav-item" id="navReward" role="button" aria-label="Reward" tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>Reward</div>
+      <div class="nav-item active" id="navMe" role="button" aria-label="Me" tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M12 12a5 5 0 100-10 5 5 0 000 10zM21 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/></svg>Me</div>
+    </div>
+  </nav>
+</div>
+
+<script>
+function getQueryParam(name) { const params = new URLSearchParams(window.location.search); return params.get(name); }
+
+function goTo(page) { window.location.href = page; }
+
+document.getElementById('backBtn').addEventListener('click', () => goTo('index.html'));
+document.getElementById('navHome').addEventListener('click', () => goTo('index.html'));
+document.getElementById('navLoan').addEventListener('click', () => alert('Loan section coming soon'));
+document.getElementById('navWealth').addEventListener('click', () => alert('Wealth section coming soon'));
+document.getElementById('navReward').addEventListener('click', () => alert('Reward section coming soon'));
+document.getElementById('navMe').addEventListener('click', () => goTo('me.html'));
+
+const optAirtime = document.getElementById('optAirtime');
+const optData = document.getElementById('optData');
+const optBetting = document.getElementById('optBetting');
+const billingForm = document.getElementById('billingForm');
+const formTitle = document.getElementById('formTitle');
+const recipient = document.getElementById('recipient');
+const payAmount = document.getElementById('payAmount');
+const payBtn = document.getElementById('payBtn');
+const payStatus = document.getElementById('payStatus');
+
+function selectType(type) {
+  billingForm.style.display = 'block';
+  formTitle.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+  recipient.placeholder = type === 'betting' ? 'Wallet ID / Code' : 'Phone number or account';
+  payAmount.placeholder = '₦ Amount';
+  payStatus.textContent = '';
+  recipient.value = '';
+  payAmount.value = '';
+}
+
+optAirtime.addEventListener('click', () => selectType('airtime'));
+optData.addEventListener('click', () => selectType('data'));
+optBetting.addEventListener('click', () => selectType('betting'));
+
+payBtn.addEventListener('click', () => {
+  const amount = parseFloat(payAmount.value || '0');
+  if (!recipient.value.trim() || !amount || amount <= 0) {
+    payStatus.textContent = 'Enter valid recipient and amount';
+    payStatus.style.color = '#ff4d4f';
+    return;
+  }
+  payStatus.textContent = 'This is a demo flow; no payment will be sent.';
+  payStatus.style.color = '#22c55e';
+});
+
+// Pre-select type from URL
+const type = getQueryParam('type');
+if (type === 'airtime') selectType('airtime');
+if (type === 'data') selectType('data');
+if (type === 'betting') selectType('betting');
+</script>
+</body>
+</html>

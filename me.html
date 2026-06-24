@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title> PalmPay</title>
+<style>
+  :root {
+    --bg: #0f0f12;
+    --panel: #17171c;
+    --muted: #9aa2b2;
+    --text: #fff;
+    --card: #17171c;
+    --card-border: rgba(255,255,255,0.08);
+    --option-bg: rgba(255,255,255,0.06);
+    --option-border: rgba(255,255,255,0.12);
+    --option-hover: rgba(255,255,255,0.12);
+    --bottom-border: rgba(255,255,255,0.08);
+  }
+  [data-theme="light"] {
+    --bg: #f5f5f7;
+    --panel: #ffffff;
+    --muted: #6b7280;
+    --text: #111;
+    --card: #ffffff;
+    --card-border: rgba(0,0,0,0.1);
+    --option-bg: rgba(0,0,0,0.04);
+    --option-border: rgba(0,0,0,0.1);
+    --option-hover: rgba(0,0,0,0.08);
+    --bottom-border: rgba(0,0,0,0.1);
+  }
+  html, body { height: 100dvh; margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+  .app { max-width: 420px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; padding-bottom: 96px; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 12px; }
+  .profile { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 42px; height: 42px; border-radius: 14px; background: linear-gradient(135deg, #7c3aed, #5b21b6); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+  .profile-info { line-height: 1.2; }
+  .profile-info .name { font-weight: 700; }
+  .profile-info .email { font-size: 12px; color: var(--muted); }
+  .card { margin: 12px; padding: 14px; border-radius: 14px; background: var(--panel); border: 1px solid var(--card-border); }
+  .section { margin-top: 12px; }
+  .section-title { font-weight: 700; margin-bottom: 8px; }
+  .option { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background: var(--option-bg); border: 1px solid var(--option-border); margin-top: 10px; cursor: pointer; }
+  .option:hover { background: var(--option-hover); }
+  .option .label { display: flex; flex-direction: column; }
+  .option .title { font-weight: 700; }
+  .option .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .option .icon { width: 36px; height: 36px; border-radius: 12px; background: rgba(123,97,255,0.18); display: flex; align-items: center; justify-content: center; }
+  .bottom { position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel); border-top: 1px solid var(--bottom-border); }
+  .bottom-inner { display: flex; justify-content: space-around; padding: 10px 0; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: var(--muted); cursor: pointer; }
+  .nav-item.active { color: var(--text); }
+  .nav-item svg { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="profile">
+      <div class="avatar" id="profileAvatar" title="Tap to update picture">
+        <img id="profileImg" style="display:none;width:100%;height:100%;border-radius:14px;object-fit:cover;" />
+        <span id="profileInitials">TA</span>
+        <input type="file" id="profileImageUpload" accept="image/*" style="display:none" />
+      </div>
+      <div class="profile-info" id="profileDisplay">
+        <div class="name" id="profileName">PalmPay User</div>
+        <div class="email" id="profileEmail">user@palmpay.demo</div>
+      </div>
+      <div id="profileEditForm" style="display:none; margin-top:10px;">
+        <input id="profileEditName" class="auth-input" type="text" placeholder="Your name" style="margin-bottom:8px;" />
+        <input id="profileEditEmail" class="auth-input" type="email" placeholder="you@example.com" style="margin-bottom:12px;" />
+        <div style="display:flex;gap:10px;">
+          <button id="profileSaveBtn" class="auth-primary" style="flex:1;">Save</button>
+          <button id="profileCancelBtn" class="auth-primary" style="flex:1;background:rgba(255,255,255,0.12);">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div class="icon" id="settingsBtn" title="Toggle theme">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z"/><path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82A1.65 1.65 0 015 12.7H4a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H10a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H20a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="section">
+      <div class="section-title">Account</div>
+      <div class="option" id="editProfileOption">
+        <div class="label">
+          <div class="title">Profile</div>
+          <div class="subtitle">Update personal details</div>
+        </div>
+        <div class="icon">👤</div>
+      </div>
+      <div class="option" id="securityOption">
+        <div class="label">
+          <div class="title">Security</div>
+          <div class="subtitle" id="securitySubtitle">Change password & PIN</div>
+        </div>
+        <div class="icon">🔒</div>
+      </div>
+      <div class="option">
+        <div class="label">
+          <div class="title">Settings</div>
+          <div class="subtitle">App preferences</div>
+        </div>
+        <div class="icon">⚙️</div>
+      </div>
+      <div class="option" id="logoutOption">
+        <div class="label">
+          <div class="title">Logout</div>
+          <div class="subtitle">Sign out of PalmPay</div>
+        </div>
+        <div class="icon">🚪</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Support</div>
+      <div class="option">
+        <div class="label">
+          <div class="title">Help Center</div>
+          <div class="subtitle">FAQs & guides</div>
+        </div>
+        <div class="icon">❓</div>
+      </div>
+      <div class="option">
+        <div class="label">
+          <div class="title">Contact Us</div>
+          <div class="subtitle">Chat or email support</div>
+        </div>
+        <div class="icon">✉️</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom" role="navigation" aria-label="Main navigation">
+    <div class="bottom-inner">
+      <div class="nav-item" id="navHome" role="button" aria-label="Home" tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-6 9 6v8a2 2 0 01-2 2h-4v-6H9v6H5a2 2 0 01-2-2z"/></svg>Home</div>
+      <div class="nav-item" id="navDashboard" role="button" aria-label="Dashboard" tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>Dashboard</div>
+      <div class="nav-item" id="navLoan" role="button" aria-label="Loan" tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M12 2v20m9-9H3m7-7l-4 4 4 4m6-4l4-4-4-4"/></svg>Loan</div>
+      <div class="nav-item" id="navWealth" role="button" aria-label="Wealth" tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>Wealth</div>
+      <div class="nav-item active" id="navMe" role="button" aria-label="Me" tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M12 12a5 5 0 100-10 5 5 0 000 10zM21 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/></svg>Me</div>
+    </div>
+  </nav>
+</div>
+
+<script>
+const LS_THEME = 'demo_theme';
+
+function goTo(page) {
+  window.location.href = page;
+}
+
+function initTheme() {
+  const savedTheme = localStorage.getItem(LS_THEME) || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(LS_THEME, next);
+}
+
+initTheme();
+
+// Auth guard (redirect to login if not logged in)
+const LS_USER = 'demo_user';
+const LS_LOGGED_IN = 'demo_logged_in';
+const LS_PROFILE_PIC = 'demo_profile_pic';
+
+function getStoredUser() {
+  try { return JSON.parse(localStorage.getItem(LS_USER) || 'null'); } catch { return null; }
+}
+
+function requireLogin() {
+  if (localStorage.getItem(LS_LOGGED_IN) !== '1' || !getStoredUser()) {
+    window.location.href = 'index.html';
+  }
+}
+
+function populateProfile() {
+  const user = getStoredUser();
+  if (!user) return;
+  const nameEl = document.getElementById('profileName');
+  const emailEl = document.getElementById('profileEmail');
+  const avatarEl = document.querySelector('.avatar');
+  if (nameEl) nameEl.textContent = user.name || user.phone;
+  if (emailEl) emailEl.textContent = user.email || `${user.phone}@palmpay.demo`;
+  const profileImg = document.getElementById('profileImg');
+  const profileInitials = document.getElementById('profileInitials');
+  if (profileImg && profileInitials) {
+    // Prefer persistent profile picture, falling back to stored user image
+    const storedPic = localStorage.getItem(LS_PROFILE_PIC);
+    const imageToUse = storedPic || user.image;
+
+    if (imageToUse) {
+      profileImg.src = imageToUse;
+      profileImg.style.display = 'block';
+      profileInitials.style.display = 'none';
+
+      // Keep user record in sync so other views can reference user.image
+      if (!user.image && storedPic) {
+        user.image = storedPic;
+        localStorage.setItem(LS_USER, JSON.stringify(user));
+      }
+    } else {
+      const initials = (user.name || user.phone || '').split(' ').map(x => x[0]).join('').slice(0,2).toUpperCase();
+      profileInitials.textContent = initials || 'PP';
+      profileImg.style.display = 'none';
+      profileInitials.style.display = 'flex';
+    }
+  }
+}
+
+requireLogin();
+populateProfile();
+
+const editProfileOption = document.getElementById('editProfileOption');
+const profileDisplay = document.getElementById('profileDisplay');
+const profileEditForm = document.getElementById('profileEditForm');
+const profileEditName = document.getElementById('profileEditName');
+const profileEditEmail = document.getElementById('profileEditEmail');
+const profileSaveBtn = document.getElementById('profileSaveBtn');
+const profileCancelBtn = document.getElementById('profileCancelBtn');
+
+function showEditForm(show) {
+  if (!profileEditForm || !profileDisplay) return;
+  profileEditForm.style.display = show ? 'block' : 'none';
+  profileDisplay.style.display = show ? 'none' : 'block';
+}
+
+if (editProfileOption) {
+  editProfileOption.addEventListener('click', () => {
+    const user = getStoredUser();
+    if (!user) return;
+    profileEditName.value = user.name || user.phone;
+    profileEditEmail.value = user.email || `${user.phone}@palmpay.demo`;
+    showEditForm(true);
+  });
+}
+
+if (profileSaveBtn) {
+  profileSaveBtn.addEventListener('click', () => {
+    const user = getStoredUser();
+    if (!user) return;
+    const newName = profileEditName.value.trim();
+    const newEmail = profileEditEmail.value.trim();
+    if (!newName) {
+      alert('Name cannot be empty');
+      profileEditName.focus();
+      return;
+    }
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(newEmail)) {
+      alert('Please enter a valid email address');
+      profileEditEmail.focus();
+      return;
+    }
+    user.name = newName;
+    user.email = newEmail;
+    localStorage.setItem(LS_USER, JSON.stringify(user));
+    populateProfile();
+    showEditForm(false);
+    alert('Profile updated successfully.');
+  });
+}
+
+if (profileCancelBtn) {
+  profileCancelBtn.addEventListener('click', () => {
+    showEditForm(false);
+  });
+}
+
+document.getElementById('logoutOption').addEventListener('click', () => {
+  localStorage.removeItem(LS_LOGGED_IN);
+  window.location.href = 'index.html';
+});
+
+// Profile image upload handler
+const profileAvatar = document.getElementById('profileAvatar');
+const profileImageUpload = document.getElementById('profileImageUpload');
+if (profileAvatar && profileImageUpload) {
+  profileAvatar.addEventListener('click', () => profileImageUpload.click());
+  profileImageUpload.addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const imgData = reader.result;
+      const user = getStoredUser();
+      if (!user) return;
+      user.image = imgData;
+      localStorage.setItem(LS_USER, JSON.stringify(user));
+      populateProfile();
+      alert('Profile picture updated successfully.');
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('settingsBtn').addEventListener('click', toggleTheme);
+
+document.getElementById('navHome').addEventListener('click', () => goTo('index.html'));
+document.getElementById('navDashboard').addEventListener('click', () => goTo('dashboard.html'));
+document.getElementById('navLoan').addEventListener('click', () => alert('Loan section coming soon'));
+document.getElementById('navWealth').addEventListener('click', () => alert('Wealth section coming soon'));
+document.getElementById('navMe').addEventListener('click', () => goTo('me.html'));
+
+// Security pin status
+const pinKey = 'demo_pin';
+const securitySubtitle = document.getElementById('securitySubtitle');
+const securityOption = document.getElementById('securityOption');
+
+function updateSecuritySubtitle() {
+  const pin = localStorage.getItem(pinKey);
+  securitySubtitle.textContent = pin ? 'PIN is set (change anytime)' : 'No PIN set. Set a PIN for extra security';
+}
+
+securityOption.addEventListener('click', () => {
+  // PIN functionality removed
+});
+
+updateSecuritySubtitle();
+</script>
+</body>
+</html>

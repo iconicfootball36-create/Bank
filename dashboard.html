@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Spending Analytics - PalmPay</title>
+<style>
+  :root {
+    --bg: #0f0f12;
+    --panel: #17171c;
+    --muted: #9aa2b2;
+    --text: #fff;
+    --card: #17171c;
+    --card-border: rgba(255,255,255,0.08);
+    --action-bg: #0f1113;
+    --action-border: rgba(255,255,255,0.02);
+    --bottom-border: rgba(255,255,255,0.08);
+    --accent: #7c3aed;
+  }
+  [data-theme="light"] {
+    --bg: #f5f5f7;
+    --panel: #ffffff;
+    --muted: #6b7280;
+    --text: #111;
+    --card: #ffffff;
+    --card-border: rgba(0,0,0,0.1);
+    --action-bg: #ffffff;
+    --action-border: rgba(0,0,0,0.1);
+    --bottom-border: rgba(0,0,0,0.1);
+  }
+  * { box-sizing: border-box; }
+  html, body { 
+    height: 100dvh; 
+    margin: 0; 
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
+    background: var(--bg); 
+    color: var(--text); 
+    -webkit-font-smoothing: antialiased; 
+    overflow-x: hidden;
+  }
+  .app { 
+    max-width: 420px; 
+    margin: 0 auto; 
+    min-height: 100dvh; 
+    display: flex; 
+    flex-direction: column; 
+    padding-bottom: 86px; 
+  }
+  header { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    padding: 12px 12px; 
+  }
+  .header-title { font-weight: 700; font-size: 20px; }
+  .theme-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--action-bg);
+    border: 1px solid var(--action-border);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+  }
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 12px 10px 12px;
+  }
+  .card {
+    background: var(--card);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    margin-bottom: 10px;
+    transition: background 0.3s ease;
+  }
+  .stat-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .stat-item {
+    background: var(--card);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    text-align: center;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .stat-value { font-weight: 800; font-size: 18px; color: #ff4d4f; }
+  .chart-container {
+    background: var(--card);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    margin-bottom: 10px;
+  }
+  .chart-title { font-weight: 700; margin-bottom: 12px; }
+  .bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .bar-label { font-size: 12px; color: var(--muted); min-width: 60px; }
+  .bar-bg {
+    flex: 1;
+    height: 24px;
+    background: linear-gradient(90deg, #7c3aed, #5b21b6);
+    border-radius: 8px;
+    margin: 0 8px;
+    position: relative;
+  }
+  .bar-value { font-size: 11px; color: var(--muted); min-width: 50px; text-align: right; }
+  .category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .category-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    background: var(--action-bg);
+    border-radius: 8px;
+    border: 1px solid var(--action-border);
+  }
+  .category-info { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    flex: 1;
+  }
+  .category-icon { font-size: 18px; }
+  .category-name { font-weight: 600; }
+  .category-amount { 
+    font-weight: 700; 
+    color: #ff4d4f; 
+    font-size: 14px;
+  }
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--card-border);
+    padding-bottom: 8px;
+  }
+  .tab {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .tab.active {
+    color: var(--text);
+    background: var(--action-bg);
+  }
+  .bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--bottom-border);
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .bottom-inner {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 10px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .nav-item.active {
+    color: var(--text);
+  }
+  .nav-item svg {
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-title">Spending Analytics</div>
+    <button class="theme-btn" id="themeToggle" title="Toggle theme">🌙</button>
+  </header>
+
+  <div class="content">
+    <!-- Summary Stats -->
+    <div class="stat-box">
+      <div class="stat-item">
+        <div class="stat-label">Spent Today</div>
+        <div class="stat-value" id="statToday">₦0.00</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">This Week</div>
+        <div class="stat-value" id="statWeek">₦0.00</div>
+      </div>
+    </div>
+
+    <div class="stat-box">
+      <div class="stat-item">
+        <div class="stat-label">This Month</div>
+        <div class="stat-value" id="statMonth">₦0.00</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">This Year</div>
+        <div class="stat-value" id="statYear">₦0.00</div>
+      </div>
+    </div>
+
+    <!-- Period Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-period="today">Today</button>
+      <button class="tab" data-period="week">Week</button>
+      <button class="tab" data-period="month">Month</button>
+      <button class="tab" data-period="year">Year</button>
+    </div>
+
+    <!-- Bar Chart of Daily Spending -->
+    <div class="chart-container">
+      <div class="chart-title">Daily Breakdown (Last 7 Days)</div>
+      <div id="dailyChart"></div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="chart-container">
+      <div class="chart-title">Spending by Category</div>
+      <div id="categoryChart"></div>
+    </div>
+
+    <!-- Transaction Categories List -->
+    <div class="chart-container">
+      <div class="chart-title">Top Categories</div>
+      <div class="category-list" id="categoryList"></div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="chart-container">
+      <div class="chart-title">Recent Spends</div>
+      <div id="recentList"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom" role="navigation">
+    <div class="bottom-inner">
+      <div class="nav-item" id="navHome" role="button" tabindex="0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-6 9 6v8a2 2 0 01-2 2h-4v-6H9v6H5a2 2 0 01-2-2z"/></svg>Home
+      </div>
+      <div class="nav-item active" id="navDashboard" role="button" tabindex="0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>Dashboard
+      </div>
+      <div class="nav-item" id="navWealth" role="button" tabindex="0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>Wealth
+      </div>
+      <div class="nav-item" id="navMe" role="button" tabindex="0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M12 12a5 5 0 100-10 5 5 0 000 10zM21 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/></svg>Me
+      </div>
+    </div>
+  </nav>
+</div>
+
+<script>
+const LS_THEME = 'demo_theme';
+const LS_TX = 'demo_transactions_ngn';
+
+// Load transactions
+let transactions = JSON.parse(localStorage.getItem(LS_TX) || JSON.stringify([]));
+
+// Theme management
+function initTheme() {
+  const savedTheme = localStorage.getItem(LS_THEME) || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(LS_THEME, next);
+}
+
+initTheme();
+document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+// Utility functions
+function formatNGN(n) {
+  return '₦ ' + Number(n).toLocaleString('en-NG', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function getDayName(date) {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return days[date.getDay()];
+}
+
+function computeSpentAmount(period = 'today') {
+  if (!Array.isArray(transactions)) return 0;
+  
+  const now = new Date();
+  let startOfPeriod = new Date(now);
+  
+  if (period === 'today') {
+    startOfPeriod.setHours(0, 0, 0, 0);
+  } else if (period === 'week') {
+    const day = startOfPeriod.getDay();
+    startOfPeriod.setDate(startOfPeriod.getDate() - day);
+    startOfPeriod.setHours(0, 0, 0, 0);
+  } else if (period === 'month') {
+    startOfPeriod.setDate(1);
+    startOfPeriod.setHours(0, 0, 0, 0);
+  } else if (period === 'year') {
+    startOfPeriod.setMonth(0, 1);
+    startOfPeriod.setHours(0, 0, 0, 0);
+  }
+
+  const startTime = startOfPeriod.getTime();
+  return transactions.reduce((sum, tx) => {
+    if (!tx || typeof tx.amount !== 'number' || tx.time < startTime) return sum;
+    return tx.amount < 0 ? sum + Math.abs(tx.amount) : sum;
+  }, 0);
+}
+
+function getSpentByDay() {
+  const days = {};
+  const now = new Date();
+  
+  // Initialize last 7 days
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    date.setHours(0, 0, 0, 0);
+    const key = date.toISOString().split('T')[0];
+    days[key] = 0;
+  }
+  
+  // Add spending
+  transactions.forEach(tx => {
+    if (!tx || typeof tx.amount !== 'number' || tx.amount >= 0) return;
+    const date = new Date(tx.time);
+    date.setHours(0, 0, 0, 0);
+    const key = date.toISOString().split('T')[0];
+    if (key in days) {
+      days[key] += Math.abs(tx.amount);
+    }
+  });
+  
+  return days;
+}
+
+function getCategorySpending() {
+  const categories = {};
+  const categoryIcons = {
+    'Send': '➡️',
+    'Transfer': '🏦',
+    'Buy': '🛍️',
+    'Airtime': '📞',
+    'Data': '📶',
+    'Betting': '⚽',
+    'Refund': '💳',
+    'Withdrawal': '💸',
+    'Other': '📊'
+  };
+
+  transactions.forEach(tx => {
+    if (!tx || typeof tx.amount !== 'number' || tx.amount >= 0) return;
+    
+    let category = 'Other';
+    const name = (tx.name || '').toLowerCase();
+    
+    if (name.includes('send')) category = 'Send';
+    else if (name.includes('transfer') || name.includes('interbank')) category = 'Transfer';
+    else if (name.includes('buy') || name.includes('data')) category = 'Data';
+    else if (name.includes('airtime')) category = 'Airtime';
+    else if (name.includes('betting')) category = 'Betting';
+    else if (name.includes('refund')) category = 'Refund';
+    else if (name.includes('withdraw')) category = 'Withdrawal';
+    
+    if (!categories[category]) {
+      categories[category] = { amount: 0, icon: categoryIcons[category] || categoryIcons['Other'] };
+    }
+    categories[category].amount += Math.abs(tx.amount);
+  });
+  
+  return categories;
+}
+
+function updateStats() {
+  document.getElementById('statToday').textContent = formatNGN(computeSpentAmount('today'));
+  document.getElementById('statWeek').textContent = formatNGN(computeSpentAmount('week'));
+  document.getElementById('statMonth').textContent = formatNGN(computeSpentAmount('month'));
+  document.getElementById('statYear').textContent = formatNGN(computeSpentAmount('year'));
+}
+
+function renderDailyChart() {
+  const days = getSpentByDay();
+  const maxAmount = Math.max(...Object.values(days), 1);
+  
+  let html = '';
+  Object.entries(days).forEach(([date, amount]) => {
+    const d = new Date(date);
+    const dayName = getDayName(d);
+    const percentage = maxAmount > 0 ? (amount / maxAmount * 100) : 0;
+    html += `
+      <div class="bar">
+        <div class="bar-label">${dayName}</div>
+        <div class="bar-bg" style="width: ${percentage}%"></div>
+        <div class="bar-value">${formatNGN(amount)}</div>
+      </div>
+    `;
+  });
+  
+  document.getElementById('dailyChart').innerHTML = html;
+}
+
+function renderCategoryChart() {
+  const categories = getCategorySpending();
+  const sorted = Object.entries(categories).sort((a, b) => b[1].amount - a[1].amount);
+  const maxAmount = Math.max(...sorted.map(([_, c]) => c.amount), 1);
+  
+  let html = '';
+  sorted.forEach(([name, data]) => {
+    const percentage = maxAmount > 0 ? (data.amount / maxAmount * 100) : 0;
+    html += `
+      <div class="bar">
+        <div class="bar-label">${name}</div>
+        <div class="bar-bg" style="width: ${percentage}%"></div>
+        <div class="bar-value">${formatNGN(data.amount)}</div>
+      </div>
+    `;
+  });
+  
+  document.getElementById('categoryChart').innerHTML = html;
+}
+
+function renderCategoryList() {
+  const categories = getCategorySpending();
+  const sorted = Object.entries(categories)
+    .sort((a, b) => b[1].amount - a[1].amount)
+    .slice(0, 5);
+  
+  let html = '';
+  sorted.forEach(([name, data]) => {
+    html += `
+      <div class="category-item">
+        <div class="category-info">
+          <div class="category-icon">${data.icon}</div>
+          <div class="category-name">${name}</div>
+        </div>
+        <div class="category-amount">${formatNGN(data.amount)}</div>
+      </div>
+    `;
+  });
+  
+  document.getElementById('categoryList').innerHTML = html || '<p style="color:var(--muted);text-align:center;padding:20px">No spending yet</p>';
+}
+
+function renderRecentList() {
+  const spents = transactions
+    .filter(tx => tx && typeof tx.amount === 'number' && tx.amount < 0)
+    .sort((a, b) => (b.time || 0) - (a.time || 0))
+    .slice(0, 10);
+  
+  let html = '';
+  spents.forEach(tx => {
+    const date = new Date(tx.time || 0);
+    const timeStr = date.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' });
+    html += `
+      <div class="category-item">
+        <div class="category-info">
+          <div style="flex:1">
+            <div class="category-name">${(tx.name || 'Transaction').substring(0, 30)}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">${timeStr}</div>
+          </div>
+        </div>
+        <div class="category-amount">${formatNGN(Math.abs(tx.amount))}</div>
+      </div>
+    `;
+  });
+  
+  document.getElementById('recentList').innerHTML = html || '<p style="color:var(--muted);text-align:center;padding:20px">No transactions</p>';
+}
+
+function renderAll() {
+  updateStats();
+  renderDailyChart();
+  renderCategoryChart();
+  renderCategoryList();
+  renderRecentList();
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    // Could filter by period if needed
+  });
+});
+
+// Navigation
+document.getElementById('navHome').addEventListener('click', () => {
+  window.location.href = 'index.html';
+});
+document.getElementById('navWealth').addEventListener('click', () => {
+  alert('Wealth section coming soon');
+});
+document.getElementById('navMe').addEventListener('click', () => {
+  window.location.href = 'me.html';
+});
+
+// Initial render
+renderAll();
+
+// Refresh every 10 seconds to catch new transactions
+setInterval(() => {
+  transactions = JSON.parse(localStorage.getItem(LS_TX) || JSON.stringify([]));
+  renderAll();
+}, 10_000);
+</script>
+</body>
+</html>
