@@ -409,9 +409,13 @@ router.post('/transfer', checkMonnifyConfig, async (req, res) => {
   } catch (error) {
     const errorData = error.response?.data || { message: error.message };
     console.error('Monnify transfer error:', errorData);
+    const providerMessage = errorData?.responseMessage || errorData?.message || '';
+    const message = /does not belong to merchant/i.test(providerMessage)
+      ? 'The Monnify source account is not owned by this merchant. Set MONNIFY_SOURCE_ACCOUNT_NUMBER to a valid account linked to these Monnify credentials.'
+      : providerMessage || 'Failed to process transfer';
     return res.status(500).json({
       status: false,
-      message: errorData?.responseMessage || errorData?.message || 'Failed to process transfer',
+      message,
       error: errorData
     });
   }
