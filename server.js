@@ -23,10 +23,14 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`Make sure to set PAYSTACK_SECRET_KEY in your .env file`);
-  console.log(`For Monnify, set MONNIFY_API_KEY and MONNIFY_SECRET_KEY in your .env file`);
-});
+// Export the app for Vercel and start it when running locally.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Make sure to set PAYSTACK_SECRET_KEY in your .env file`);
+    console.log(`For Monnify, set MONNIFY_API_KEY and MONNIFY_SECRET_KEY in your .env file`);
+  });
+}
+
+module.exports = app;
 
