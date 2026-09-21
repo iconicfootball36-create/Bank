@@ -4,6 +4,13 @@ const router = express.Router();
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
+const FALLBACK_BANKS = [
+  { name: 'OPay', code: '999992', isFintech: true },
+  { name: 'PalmPay', code: '999991', isFintech: true },
+  { name: 'MoniePoint', code: '50515', isFintech: true },
+  { name: 'Kuda Bank', code: '50211', isFintech: true },
+  { name: 'Carbon', code: '50457', isFintech: true }
+];
 
 // Middleware to check if Paystack key is configured
 const checkPaystackKey = (req, res, next) => {
@@ -20,7 +27,15 @@ const checkPaystackKey = (req, res, next) => {
  * GET /api/paystack/banks
  * Fetch all Nigerian banks from Paystack
  */
-router.get('/banks', checkPaystackKey, async (req, res) => {
+router.get('/banks', async (req, res) => {
+  if (!PAYSTACK_SECRET_KEY) {
+    return res.json({
+      status: true,
+      message: 'Paystack credentials not configured; using fallback fintech banks',
+      data: FALLBACK_BANKS
+    });
+  }
+
   try {
     const response = await axios.get(`${PAYSTACK_BASE_URL}/bank`, {
       headers: {

@@ -9,6 +9,15 @@ const MONNIFY_CONTRACT_CODE = process.env.MONNIFY_CONTRACT_CODE;
 const MONNIFY_BASE_URL = process.env.MONNIFY_BASE_URL || 'https://sandbox.monnify.com';
 const MONNIFY_SOURCE_ACCOUNT_NUMBER = process.env.MONNIFY_SOURCE_ACCOUNT_NUMBER;
 
+function hasMonnifyCredentials() {
+  return Boolean(
+    MONNIFY_API_KEY &&
+    MONNIFY_SECRET_KEY &&
+    !MONNIFY_API_KEY.includes('your_') &&
+    !MONNIFY_SECRET_KEY.includes('your_')
+  );
+}
+
 let cachedAccessToken = null;
 let tokenExpiryMs = 0;
 
@@ -25,7 +34,7 @@ const FINTECH_BANKS = [
 ];
 
 function checkMonnifyConfig(req, res, next) {
-  if (!MONNIFY_API_KEY || !MONNIFY_SECRET_KEY) {
+  if (!hasMonnifyCredentials()) {
     return res.status(500).json({
       status: false,
       message: 'Monnify credentials not configured. Set MONNIFY_API_KEY and MONNIFY_SECRET_KEY in .env'
@@ -82,7 +91,15 @@ async function getMonnifyAccessToken() {
   return cachedAccessToken;
 }
 
-router.get('/banks', checkMonnifyConfig, async (req, res) => {
+router.get('/banks', async (req, res) => {
+  if (!hasMonnifyCredentials()) {
+    return res.json({
+      status: true,
+      message: 'Monnify credentials not configured; using fallback fintech banks',
+      data: FINTECH_BANKS
+    });
+  }
+
   try {
     const token = await getMonnifyAccessToken();
     const response = await axios.get(`${MONNIFY_BASE_URL}/api/v1/banks`, {
@@ -160,7 +177,7 @@ router.post('/verify', checkMonnifyConfig, async (req, res) => {
 
   try {
     const token = await getMonnifyAccessToken();
-    const response = await axios.get(`${MONNIFY_BASE_URL}/api/v1/disbursements/account/validate`, {
+    const response = await axios.get(`${MONNIFY_BASE_URL}/api/v2/disbursements/account/validate`, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
